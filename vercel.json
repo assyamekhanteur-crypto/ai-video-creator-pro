@@ -1,0 +1,8 @@
+{
+  "buildCommand": "cd saas-premium && npm install && npm run build",
+  "outputDirectory": "saas-premium/dist",
+  "installCommand": "echo 'handled in buildCommand'",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
