@@ -7,7 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const VOICE_CREDITS = 3;
+const VOICE_CREDITS = 5; // ElevenLabs Multilingual v2 ≈ $0.045/30s narration; 1 credit ≈ $0.01 real cost
 
 async function deductCredits(supabase: ReturnType<typeof createClient>, userId: string, cost: number, jobId: string) {
   const { data: profile, error: pErr } = await supabase

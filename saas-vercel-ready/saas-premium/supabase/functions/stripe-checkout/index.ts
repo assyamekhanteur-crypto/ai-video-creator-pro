@@ -12,8 +12,8 @@ const corsHeaders = {
 // run the migration mapping these plan IDs to Stripe price IDs in the `subscriptions` table
 // (or replace with hardcoded price IDs here once known).
 const PLAN_CONFIG: Record<string, { credits: number }> = {
-  pro: { credits: 2000 },
-  business: { credits: 10000 },
+  pro: { credits: 700 },
+  business: { credits: 2400 },
 };
 
 Deno.serve(async (req: Request) => {

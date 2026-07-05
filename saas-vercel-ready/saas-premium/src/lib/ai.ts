@@ -80,3 +80,23 @@ export async function generateVideo(params: {
 }, session: Session | null): Promise<VideoResult> {
   return callFunction<VideoResult>('ai-video', params, session)
 }
+
+export interface VideoStatusResult {
+  status: 'processing' | 'completed' | 'failed'
+  resultUrl: string | null
+  error: string | null
+}
+
+export async function checkVideoStatus(jobId: string, session: Session | null): Promise<VideoStatusResult> {
+  if (!session) throw new Error('Not authenticated')
+  const res = await fetch(`${functionUrl('ai-video')}?jobId=${encodeURIComponent(jobId)}`, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+    },
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
+  return data as VideoStatusResult
+}

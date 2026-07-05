@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
-import { generateScript, generateVoice, generateVideo, type ScriptResult } from '../lib/ai'
+import { generateScript, generateVoice, generateVideo, checkVideoStatus, type ScriptResult } from '../lib/ai'
 import { supabase } from '../lib/supabase'
 
 /* ─── Types ─── */
@@ -24,12 +24,12 @@ const STEPS: { id: StepId; label: string; icon: typeof Wand2 }[] = [
 ]
 
 const AI_MODELS = [
-  { id: 'openai',  name: 'GPT-Video',    badge: 'Fast',    logo: '🧠', color: 'from-emerald-500 to-teal-500',   desc: 'Best for tutorials & explainers', credits: 10, provider: 'runway' as const },
-  { id: 'runway',  name: 'Runway Gen-4', badge: 'Pro',     logo: '🚀', color: 'from-rose-500 to-pink-500',      desc: 'Hollywood-grade visual effects',  credits: 30, provider: 'runway' as const },
-  { id: 'kling',   name: 'Kling 2.0',   badge: 'Viral',   logo: '⚡', color: 'from-violet-500 to-purple-500',  desc: 'Optimised for social media',      credits: 15, provider: 'kling'  as const },
-  { id: 'google',  name: 'Veo 3',        badge: 'Quality', logo: '🎬', color: 'from-blue-500 to-indigo-500',    desc: "Google's cinematic AI model",     credits: 25, provider: 'google' as const },
-  { id: 'pika',    name: 'Pika 2.2',    badge: 'Creative',logo: '🎨', color: 'from-amber-500 to-orange-500',   desc: 'Stylised & artistic videos',      credits: 12, provider: 'runway' as const },
-  { id: 'luma',    name: 'Luma Dream',  badge: '3D',      logo: '✨', color: 'from-cyan-500 to-sky-500',       desc: 'Photorealistic 3D scenes',        credits: 20, provider: 'runway' as const },
+  { id: 'openai',  name: 'GPT-Video',    badge: 'Fast',    logo: '🧠', color: 'from-emerald-500 to-teal-500',   desc: 'Best for tutorials & explainers', credits: 25, provider: 'runway' as const },
+  { id: 'runway',  name: 'Runway Gen-4', badge: 'Pro',     logo: '🚀', color: 'from-rose-500 to-pink-500',      desc: 'Hollywood-grade visual effects',  credits: 25, provider: 'runway' as const },
+  { id: 'kling',   name: 'Kling 2.0',   badge: 'Viral',   logo: '⚡', color: 'from-violet-500 to-purple-500',  desc: 'Optimised for social media',      credits: 40, provider: 'kling'  as const },
+  { id: 'google',  name: 'Veo 3',        badge: 'Quality', logo: '🎬', color: 'from-blue-500 to-indigo-500',    desc: "Google's cinematic AI model",     credits: 50, provider: 'google' as const },
+  { id: 'pika',    name: 'Pika 2.2',    badge: 'Creative',logo: '🎨', color: 'from-amber-500 to-orange-500',   desc: 'Stylised & artistic videos',      credits: 25, provider: 'runway' as const },
+  { id: 'luma',    name: 'Luma Dream',  badge: '3D',      logo: '✨', color: 'from-cyan-500 to-sky-500',       desc: 'Photorealistic 3D scenes',        credits: 25, provider: 'runway' as const },
 ]
 
 const VOICES = [
@@ -59,6 +59,8 @@ interface RenderState {
   audioUrl: string | null
   videoJobId: string | null
   videoProviderJobId: string | null
+  videoUrl: string | null
+  projectId: string | null
   error: string | null
 }
 
@@ -175,7 +177,7 @@ function RenderTracker({
 
 /* ─── Main component ─── */
 export default function Create() {
-  const { session } = useAuth()
+  const { session, user } = useAuth()
   const navigate = useNavigate()
   const [step, setStep] = useState(0)
   const [prompt, setPrompt]       = useState('')
@@ -184,32 +186,33 @@ export default function Create() {
   const [styleId, setStyleId]     = useState('cinematic')
   const [renderState, setRenderState] = useState<RenderState>({
     phase: 'script', scriptResult: null, audioUrl: null,
-    videoJobId: null, videoProviderJobId: null, error: null,
+    videoJobId: null, videoProviderJobId: null, videoUrl: null, projectId: null, error: null,
   })
 
   const selectedModel = AI_MODELS.find(m => m.id === modelId)!
   const selectedVoice = VOICES.find(v => v.id === voiceId)!
 
-  /* Poll video job status */
+  /* Poll video job status — this actually asks the provider (via checkVideoStatus)
+     whether the render is done, since ai_jobs starts and stays 'processing'
+     until the provider confirms completion. */
   useEffect(() => {
     if (!renderState.videoJobId || renderState.phase === 'done' || renderState.phase === 'error') return
     const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from('render_jobs')
-        .select('status, result_url, error_message')
-        .eq('id', renderState.videoJobId)
-        .maybeSingle()
-      if (!data) return
-      if (data.status === 'completed') {
-        setRenderState(s => ({ ...s, phase: 'done' }))
-        clearInterval(interval)
-      } else if (data.status === 'failed') {
-        setRenderState(s => ({ ...s, phase: 'error', error: data.error_message ?? 'Video generation failed' }))
-        clearInterval(interval)
+      try {
+        const result = await checkVideoStatus(renderState.videoJobId!, session)
+        if (result.status === 'completed') {
+          setRenderState(s => ({ ...s, phase: 'done', videoUrl: result.resultUrl }))
+          clearInterval(interval)
+        } else if (result.status === 'failed') {
+          setRenderState(s => ({ ...s, phase: 'error', error: result.error ?? 'Video generation failed' }))
+          clearInterval(interval)
+        }
+      } catch {
+        // transient network/provider hiccup — try again on the next tick
       }
-    }, 4000)
+    }, 5000)
     return () => clearInterval(interval)
-  }, [renderState.videoJobId, renderState.phase])
+  }, [renderState.videoJobId, renderState.phase, session])
 
   const next = () => {
     if (step === 0 && !prompt.trim()) { toast.error('Enter a prompt first'); return }
@@ -220,9 +223,21 @@ export default function Create() {
 
   const startRender = async () => {
     setStep(4)
-    setRenderState({ phase: 'script', scriptResult: null, audioUrl: null, videoJobId: null, videoProviderJobId: null, error: null })
+    setRenderState({ phase: 'script', scriptResult: null, audioUrl: null, videoJobId: null, videoProviderJobId: null, videoUrl: null, projectId: null, error: null })
 
     try {
+      /* ⓪ Create the project row this generation will attach to */
+      let projectId: string | null = null
+      if (user) {
+        const { data: project, error: projectError } = await supabase
+          .from('projects')
+          .insert({ user_id: user.id, name: prompt.slice(0, 60) || 'Untitled project', status: 'draft' })
+          .select('id')
+          .single()
+        if (!projectError && project) projectId = project.id
+      }
+      setRenderState(s => ({ ...s, projectId }))
+
       /* ① Script */
       const scriptData = await generateScript({
         prompt,
@@ -234,7 +249,7 @@ export default function Create() {
 
       /* ② Voice — concat all scene narrations */
       const fullNarration = scriptData.scenes.map(sc => sc.narration).join(' ')
-      const voiceData = await generateVoice({ text: fullNarration, voiceId }, session)
+      const voiceData = await generateVoice({ text: fullNarration, voiceId, projectId: projectId ?? undefined }, session)
       setRenderState(s => ({ ...s, phase: 'video', audioUrl: voiceData.audioUrl }))
 
       /* ③ Video */
@@ -243,6 +258,7 @@ export default function Create() {
         provider: selectedModel.provider,
         durationSec: 5,
         aspectRatio: '16:9',
+        projectId: projectId ?? undefined,
       }, session)
       setRenderState(s => ({
         ...s,
@@ -412,7 +428,10 @@ export default function Create() {
                       <Check className="w-10 h-10 text-white" />
                     </div>
                     <h3 className="text-2xl font-bold text-white mb-2">Video ready! 🎉</h3>
-                    <p className="text-slate-500 text-sm mb-2">Script + voiceover generated. Video rendering in queue.</p>
+                    <p className="text-slate-500 text-sm mb-2">Script, voiceover and video have all finished generating.</p>
+                    {renderState.videoUrl && (
+                      <video src={renderState.videoUrl} controls className="w-full max-w-md mx-auto rounded-xl my-4 bg-black" />
+                    )}
                     {renderState.audioUrl && (
                       <div className="flex items-center justify-center gap-2 mb-6">
                         <Play className="w-4 h-4 text-emerald-400" />
@@ -436,6 +455,13 @@ export default function Create() {
                         className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center gap-2 transition-colors">
                         <FolderOpen className="w-4 h-4" /> View in history
                       </motion.button>
+                      {renderState.projectId && (
+                        <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                          onClick={() => navigate(`/editor/${renderState.projectId}`)}
+                          className="gradient-btn-primary px-5 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center gap-2">
+                          <Play className="w-4 h-4" /> Open in editor
+                        </motion.button>
+                      )}
                     </div>
                   </motion.div>
                 )}

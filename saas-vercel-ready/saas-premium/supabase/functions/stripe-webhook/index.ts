@@ -8,7 +8,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const PLAN_CREDITS: Record<string, number> = { pro: 2000, business: 10000 };
+const PLAN_CREDITS: Record<string, number> = { pro: 700, business: 2400 };
 
 async function grantCredits(supabase: ReturnType<typeof createClient>, userId: string, planId: string, reason: string) {
   const credits = PLAN_CREDITS[planId] ?? 0;

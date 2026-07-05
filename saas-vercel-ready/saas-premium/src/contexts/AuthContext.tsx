@@ -26,7 +26,13 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
-const tierMap = { free: 100, pro: 2000, business: 10000 } as const
+// 1 credit ≈ $0.01 of real provider cost (see ai-video/ai-voice functions).
+// Allotments below are sized so that even a user who spends 100% of their
+// monthly credits on the priciest video provider still leaves ~75% gross
+// margin on the plan price — free tier's $1 max exposure is treated as an
+// acceptable acquisition cost, not a subscription that needs to turn a profit.
+export const CREDIT_LIMITS = { free: 100, pro: 700, business: 2400 } as const
+const tierMap = CREDIT_LIMITS
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
