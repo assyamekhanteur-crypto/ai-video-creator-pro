@@ -54,14 +54,16 @@ BEGIN
 END $$;
 
 -- Storage RLS: users can upload to their own folder
-CREATE POLICY IF NOT EXISTS "ai_assets_upload_own" ON storage.objects
+DROP POLICY IF EXISTS "ai_assets_upload_own" ON storage.objects;
+CREATE POLICY "ai_assets_upload_own" ON storage.objects
   FOR INSERT WITH CHECK (
     bucket_id = 'ai-assets' AND
     (storage.foldername(name))[1] IN ('voice', 'video', 'thumbnail', 'exports') AND
     (storage.foldername(name))[2] = auth.uid()::text
   );
 
-CREATE POLICY IF NOT EXISTS "ai_assets_select_public" ON storage.objects
+DROP POLICY IF EXISTS "ai_assets_select_public" ON storage.objects;
+CREATE POLICY "ai_assets_select_public" ON storage.objects
   FOR SELECT USING (bucket_id = 'ai-assets');
 
 -- 3. Index on render_jobs for polling by jobId
