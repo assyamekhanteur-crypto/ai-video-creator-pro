@@ -47,6 +47,25 @@ Deno.serve(async (req: Request) => {
     if (uErr || !userData.user) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = userData.user.id;
 
+    const serviceClient = createClient(supabaseUrl, serviceRole);
+
+    /* ── GET: poll a previously submitted job's status ── */
+    if (req.method === "GET") {
+      const url = new URL(req.url);
+      const jobId = url.searchParams.get("jobId");
+      if (!jobId) throw new Error("jobId query param is required");
+
+      const { data: job, error: jobErr } = await serviceClient
+        .from("render_jobs")
+        .select("status, result_url, result_text, error_message, credits_cost")
+        .eq("id", jobId)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (jobErr || !job) return new Response(JSON.stringify({ error: "Job not found" }), { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+      return new Response(JSON.stringify(job), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const body = (await req.json()) as SubmitRequest;
     if (!body.jobType || !CREDITS[body.jobType]) throw new Error(`Invalid jobType: ${body.jobType}`);
     if (!body.prompt || !body.prompt.trim()) throw new Error("prompt is required");
@@ -55,8 +74,6 @@ Deno.serve(async (req: Request) => {
     if (!VALID_PROVIDERS[body.jobType].includes(provider)) {
       throw new Error(`Provider ${provider} not valid for ${body.jobType}. Valid: ${VALID_PROVIDERS[body.jobType].join(", ")}`);
     }
-
-    const serviceClient = createClient(supabaseUrl, serviceRole);
 
     // Check suspended
     const { data: profile } = await serviceClient.from("profiles").select("credits, is_suspended").eq("id", userId).maybeSingle();
