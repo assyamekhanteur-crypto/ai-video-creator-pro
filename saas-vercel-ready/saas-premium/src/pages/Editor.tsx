@@ -189,7 +189,7 @@ export default function Editor() {
           <Timeline />
         </div>
 
-        <PropertiesPanel />
+        <PropertiesPanel projectId={realProjectId} />
       </div>
     </div>
   )
