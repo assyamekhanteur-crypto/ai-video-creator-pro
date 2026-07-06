@@ -46,6 +46,7 @@ export interface Clip {
   duration: number
   is_proxy: boolean
   thumbnail_url?: string
+  text_content?: string
 }
 
 export interface Keyframe {
