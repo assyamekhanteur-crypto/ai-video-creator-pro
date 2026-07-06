@@ -1,5 +1,10 @@
-import { Copy, Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { Copy, Trash2, Captions, Loader2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useEditorStore } from '../../stores/editorStore'
+import { useAuth } from '../../contexts/AuthContext'
+import { generateSubtitles } from '../../lib/ai'
+import type { Clip, Track } from '../../types'
 
 function Slider({ label, value, min, max, step, onChange, format }: {
   label: string
@@ -29,18 +34,67 @@ function Slider({ label, value, min, max, step, onChange, format }: {
   )
 }
 
-export default function PropertiesPanel() {
-  const { tracks, selectedClipId, updateClip, removeClip, duplicateClip, saveToHistory } = useEditorStore()
+export default function PropertiesPanel({ projectId }: { projectId?: string }) {
+  const { session } = useAuth()
+  const { tracks, selectedClipId, updateClip, removeClip, duplicateClip, saveToHistory, addTrack, addClip } = useEditorStore()
+  const [generatingSubtitles, setGeneratingSubtitles] = useState(false)
 
-  let selected = null
+  let selected: Clip | null = null
+  let selectedTrack: Track | null = null
   for (const track of tracks) {
     const clip = track.clips.find(c => c.id === selectedClipId)
-    if (clip) { selected = clip; break }
+    if (clip) { selected = clip; selectedTrack = track; break }
   }
 
   const commit = (updates: Parameters<typeof updateClip>[1]) => {
     if (!selected) return
     updateClip(selected.id, updates)
+  }
+
+  const handleGenerateSubtitles = async () => {
+    if (!selected) return
+    setGeneratingSubtitles(true)
+    try {
+      const result = await generateSubtitles({ sourceUrl: selected.source_url, projectId, language: undefined }, session)
+
+      let textTrack = tracks.find(t => t.type === 'text')
+      if (!textTrack) {
+        textTrack = {
+          id: crypto.randomUUID(), type: 'text', name: 'Subtitles',
+          clips: [], muted: false, locked: false, visible: true, volume: 1,
+        }
+        addTrack(textTrack)
+      } else {
+        // Replace any previous auto-generated captions on this track
+        for (const c of [...textTrack.clips]) removeClip(c.id)
+      }
+
+      for (const seg of result.segments) {
+        const clip: Clip = {
+          id: crypto.randomUUID(),
+          track_id: textTrack.id,
+          source_url: '',
+          name: seg.text.slice(0, 40),
+          text_content: seg.text,
+          start_time: selected.start_time + seg.start,
+          end_time: selected.start_time + seg.end,
+          trim_start: 0, trim_end: 0,
+          duration: seg.end - seg.start,
+          volume: 1, opacity: 1, scale: 1, rotation: 0,
+          position: { x: 0, y: 0 },
+          effects: [], keyframes: [], transitions: [],
+          is_proxy: false,
+        }
+        addClip(textTrack.id, clip)
+      }
+
+      saveToHistory()
+      toast.success(`${result.segments.length} caption${result.segments.length > 1 ? 's' : ''} generated`)
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Subtitle generation failed')
+    } finally {
+      setGeneratingSubtitles(false)
+    }
   }
 
   return (
@@ -87,6 +141,17 @@ export default function PropertiesPanel() {
                 <p className="text-slate-300 font-mono">{selected.duration.toFixed(2)}s</p>
               </div>
             </div>
+
+            {selectedTrack?.type === 'audio' && selected.source_url && (
+              <button
+                onClick={handleGenerateSubtitles}
+                disabled={generatingSubtitles}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-cyan-500/10 border border-cyan-500/25 text-cyan-400 text-xs font-medium hover:bg-cyan-500/20 transition-colors disabled:opacity-50"
+              >
+                {generatingSubtitles ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Captions className="w-3.5 h-3.5" />}
+                {generatingSubtitles ? 'Transcribing…' : 'Generate subtitles (3 credits)'}
+              </button>
+            )}
 
             <Slider
               label="Volume"
