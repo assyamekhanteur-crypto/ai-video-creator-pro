@@ -100,3 +100,24 @@ export async function checkVideoStatus(jobId: string, session: Session | null): 
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`)
   return data as VideoStatusResult
 }
+
+export interface SubtitleSegment {
+  start: number
+  end: number
+  text: string
+}
+
+export interface SubtitlesResult {
+  jobId: string | null
+  segments: SubtitleSegment[]
+  language: string | null
+  creditsCost: number
+}
+
+export async function generateSubtitles(params: {
+  sourceUrl: string
+  projectId?: string
+  language?: string
+}, session: Session | null): Promise<SubtitlesResult> {
+  return callFunction<SubtitlesResult>('ai-subtitles', params, session)
+}
