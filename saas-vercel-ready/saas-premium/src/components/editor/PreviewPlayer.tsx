@@ -5,7 +5,7 @@ import type { Clip, Track } from '../../types'
 function findActiveClip(tracks: Track[], type: Track['type'], time: number): { clip: Clip; track: Track } | null {
   for (const track of tracks) {
     if (track.type !== type || !track.visible) continue
-    const clip = track.clips.find(c => time >= c.start_time && time < c.end_time && c.source_url)
+    const clip = track.clips.find(c => time >= c.start_time && time < c.end_time && (type === 'text' || c.source_url))
     if (clip) return { clip, track }
   }
   return null
@@ -20,6 +20,7 @@ export default function PreviewPlayer() {
 
   const activeVideo = findActiveClip(tracks, 'video', currentTime)
   const activeAudio = findActiveClip(tracks, 'audio', currentTime)
+  const activeCaption = findActiveClip(tracks, 'text', currentTime)
 
   // Playback loop — advances the playhead while isPlaying, independent of media element events
   // so the timeline stays authoritative even across clip boundaries with no media loaded.
@@ -91,6 +92,14 @@ export default function PreviewPlayer() {
         </div>
       )}
       {activeAudio && <audio key={activeAudio.clip.id} ref={audioRef} src={activeAudio.clip.source_url} />}
+
+      {activeCaption?.clip.text_content && (
+        <div className="absolute bottom-10 left-0 right-0 flex justify-center px-6 pointer-events-none">
+          <span className="bg-black/75 text-white text-sm font-medium px-3 py-1.5 rounded-md max-w-[80%] text-center leading-snug">
+            {activeCaption.clip.text_content}
+          </span>
+        </div>
+      )}
 
       <div className="absolute bottom-2 right-3 px-2 py-1 rounded-lg bg-black/60 backdrop-blur-sm text-[11px] font-mono text-slate-300">
         {formatTime(currentTime)} / {formatTime(duration)}
