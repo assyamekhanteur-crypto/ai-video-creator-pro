@@ -24,7 +24,7 @@ The platform combines multiple AI services into one seamless production pipeline
 
 ## Demo
 
-https://YOUR-DEMO-URL
+https://sasa-lyart-eta.vercel.app/
 
 ---
 
