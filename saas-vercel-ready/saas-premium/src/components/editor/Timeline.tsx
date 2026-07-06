@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { Lock, Unlock, Volume2, VolumeX, Music, Video as VideoIcon } from 'lucide-react'
+import { Lock, Unlock, Volume2, VolumeX, Music, Video as VideoIcon, Captions } from 'lucide-react'
 import { useEditorStore } from '../../stores/editorStore'
 import type { Clip } from '../../types'
 
@@ -129,7 +129,9 @@ export default function Timeline() {
                 className="shrink-0 border-r border-slate-800 flex items-center gap-2 px-3 bg-slate-900/40"
                 style={{ width: LABEL_WIDTH }}
               >
-                {track.type === 'audio' ? <Music className="w-3.5 h-3.5 text-violet-400 shrink-0" /> : <VideoIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />}
+                {track.type === 'audio' ? <Music className="w-3.5 h-3.5 text-violet-400 shrink-0" /> :
+                 track.type === 'text' ? <Captions className="w-3.5 h-3.5 text-amber-400 shrink-0" /> :
+                 <VideoIcon className="w-3.5 h-3.5 text-cyan-400 shrink-0" />}
                 <span className="text-xs text-slate-300 truncate flex-1">{track.name}</span>
                 <button onClick={() => updateTrack(track.id, { muted: !track.muted })} className="text-slate-500 hover:text-white shrink-0">
                   {track.muted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
@@ -149,7 +151,9 @@ export default function Timeline() {
                       onPointerDown={beginDrag(clip, 'move')}
                       className={`absolute top-1.5 bottom-1.5 rounded-lg overflow-hidden cursor-grab active:cursor-grabbing group ${
                         selected ? 'ring-2 ring-cyan-400' : 'ring-1 ring-slate-700/60'
-                      } ${track.type === 'audio' ? 'bg-gradient-to-r from-violet-600/70 to-violet-500/50' : 'bg-gradient-to-r from-cyan-600/70 to-cyan-500/50'}`}
+                      } ${track.type === 'audio' ? 'bg-gradient-to-r from-violet-600/70 to-violet-500/50' :
+                          track.type === 'text' ? 'bg-gradient-to-r from-amber-600/70 to-amber-500/50' :
+                          'bg-gradient-to-r from-cyan-600/70 to-cyan-500/50'}`}
                       style={{ left: clip.start_time * pxPerSec, width: Math.max(6, (clip.end_time - clip.start_time) * pxPerSec) }}
                     >
                       <div className="px-2 py-1 text-[11px] text-white truncate pointer-events-none">{clip.name}</div>
