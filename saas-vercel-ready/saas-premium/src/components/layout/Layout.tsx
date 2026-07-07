@@ -190,12 +190,18 @@ export default function Layout() {
           )}
 
           {/* Notifications */}
-          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.04] transition-colors">
+          <button
+            onClick={() => navigate('/render-history')}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.04] transition-colors"
+          >
             <Bell className="w-4 h-4 flex-shrink-0" />
             {!collapsed && <span className="text-sm">Notifications</span>}
           </button>
 
-          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.04] transition-colors">
+          <button
+            onClick={() => navigate('/settings')}
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.04] transition-colors"
+          >
             <Settings className="w-4 h-4 flex-shrink-0" />
             {!collapsed && <span className="text-sm">Settings</span>}
           </button>
