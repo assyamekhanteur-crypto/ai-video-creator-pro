@@ -2,8 +2,7 @@ import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './contexts/AuthContext'
-import ProtectedRoute from './components/ProtectedRoute'
-import Layout from './components/layout/Layout'
+import HomeGate from './components/HomeGate'
 
 const Login          = lazy(() => import('./pages/Login'))
 const Register       = lazy(() => import('./pages/Register'))
@@ -18,6 +17,7 @@ const Projects       = lazy(() => import('./pages/Projects'))
 const AIPipeline     = lazy(() => import('./pages/AIPipeline'))
 const Autopilot      = lazy(() => import('./pages/Autopilot'))
 const Billing        = lazy(() => import('./pages/Billing'))
+const Settings       = lazy(() => import('./pages/Settings'))
 const RenderHistory  = lazy(() => import('./pages/RenderHistory'))
 const Analytics      = lazy(() => import('./pages/Analytics'))
 const Admin          = lazy(() => import('./pages/Admin'))
@@ -64,7 +64,7 @@ function App() {
           <Route path="/terms"           element={<Terms />} />
           <Route path="/privacy"         element={<Privacy />} />
 
-          <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+          <Route path="/" element={<HomeGate />}>
             <Route index                     element={<Dashboard />} />
             <Route path="create"             element={<Create />} />
             <Route path="editor/:projectId?" element={<Editor />} />
@@ -72,6 +72,7 @@ function App() {
             <Route path="ai-pipeline"        element={<AIPipeline />} />
             <Route path="autopilot"          element={<Autopilot />} />
             <Route path="billing"            element={<Billing />} />
+            <Route path="settings"           element={<Settings />} />
             <Route path="render-history"     element={<RenderHistory />} />
             <Route path="analytics"          element={<Analytics />} />
             <Route path="referrals"          element={<Referrals />} />
