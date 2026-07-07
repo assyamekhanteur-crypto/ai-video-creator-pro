@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, animate } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import {
   Film, Sparkles, Clock, Plus, Play, Wand2,
@@ -18,6 +18,27 @@ const aiTools = [
   { to: '/ai-thumbnail', icon: Image,    label: 'AI Thumbnail',  color: 'from-emerald-500 to-teal-500',  glow: 'rgba(16,185,129,0.3)',  desc: 'YouTube-ready in 1 click' },
   { to: '/ai-shorts',    icon: Scissors, label: 'AI Shorts',     color: 'from-cyan-500 to-blue-500',     glow: 'rgba(6,182,212,0.3)',   desc: 'Long video → TikTok clips' },
 ]
+
+function greeting() {
+  const h = new Date().getHours()
+  if (h < 5) return 'Still up'
+  if (h < 12) return 'Good morning'
+  if (h < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+function AnimatedNumber({ value }: { value: number }) {
+  const [display, setDisplay] = useState(0)
+  useEffect(() => {
+    const controls = animate(0, value, {
+      duration: 0.9,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (v) => setDisplay(Math.round(v)),
+    })
+    return () => controls.stop()
+  }, [value])
+  return <>{display.toLocaleString()}</>
+}
 
 interface DashboardStats {
   videoCount: number
@@ -86,15 +107,27 @@ export default function Dashboard() {
   const creditsUsed = Math.max(0, creditLimit - (profile?.credits ?? creditLimit))
 
   const statCards = [
-    { label: 'Videos',      value: String(stats.videoCount),           sub: stats.videoCount === 0 ? 'Create your first one' : 'Total projects', icon: Film,        grad: 'from-indigo-500/20 to-cyan-500/20',  border: 'border-indigo-500/20',  text: 'text-indigo-400' },
-    { label: 'Minutes Generated', value: String(stats.minutesGenerated), sub: 'Across all projects',                                             icon: Clock,       grad: 'from-violet-500/20 to-pink-500/20',  border: 'border-violet-500/20',  text: 'text-violet-400' },
-    { label: 'Credits',     value: (profile?.credits ?? 0).toLocaleString(), sub: `of ${creditLimit.toLocaleString()} · ${creditsUsed.toLocaleString()} used`, icon: Zap,       grad: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/20',   text: 'text-amber-400' },
-    { label: 'AI Renders',  value: String(stats.aiJobsCompleted),       sub: 'Completed generations',                                            icon: CheckCircle2, grad: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/20', text: 'text-emerald-400' },
+    { label: 'Videos',      value: String(stats.videoCount),           numericValue: stats.videoCount,           sub: stats.videoCount === 0 ? 'Create your first one' : 'Total projects', icon: Film,        grad: 'from-indigo-500/20 to-cyan-500/20',  border: 'border-indigo-500/20',  text: 'text-indigo-400' },
+    { label: 'Minutes Generated', value: String(stats.minutesGenerated), numericValue: stats.minutesGenerated, sub: 'Across all projects',                                             icon: Clock,       grad: 'from-violet-500/20 to-pink-500/20',  border: 'border-violet-500/20',  text: 'text-violet-400' },
+    { label: 'Credits',     value: (profile?.credits ?? 0).toLocaleString(), numericValue: profile?.credits ?? 0, sub: `of ${creditLimit.toLocaleString()} · ${creditsUsed.toLocaleString()} used`, icon: Zap,       grad: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/20',   text: 'text-amber-400' },
+    { label: 'AI Renders',  value: String(stats.aiJobsCompleted),       numericValue: stats.aiJobsCompleted,       sub: 'Completed generations',                                            icon: CheckCircle2, grad: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/20', text: 'text-emerald-400' },
   ]
 
   return (
-    <div className="h-full overflow-auto" style={{ scrollbarWidth: 'thin' }}>
-      <div className="max-w-7xl mx-auto px-8 py-8 space-y-8">
+    <div className="h-full overflow-auto relative" style={{ scrollbarWidth: 'thin' }}>
+      {/* Ambient glow — matches the premium visual language used on Login */}
+      <motion.div
+        className="fixed -top-32 -left-20 w-96 h-96 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none"
+        animate={{ scale: [1, 1.15, 1], opacity: [0.4, 0.65, 0.4] }}
+        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
+      />
+      <motion.div
+        className="fixed top-40 -right-32 w-96 h-96 rounded-full bg-cyan-500/8 blur-3xl pointer-events-none"
+        animate={{ scale: [1.1, 1, 1.1], opacity: [0.3, 0.55, 0.3] }}
+        transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut' }}
+      />
+
+      <div className="max-w-7xl mx-auto px-8 py-8 space-y-8 relative z-10">
 
         {/* Header */}
         <motion.div
@@ -103,7 +136,7 @@ export default function Dashboard() {
           className="flex items-start justify-between"
         >
           <div>
-            <p className="text-slate-500 text-sm font-medium mb-1 tracking-wide uppercase">Welcome back</p>
+            <p className="text-slate-500 text-sm font-medium mb-1 tracking-wide uppercase">{greeting()}</p>
             <h1 className="text-4xl font-bold text-white tracking-tight">
               {name.charAt(0).toUpperCase() + name.slice(1)} <span className="wave inline-block">👋</span>
             </h1>
@@ -119,7 +152,7 @@ export default function Dashboard() {
           </div>
           <Link to="/create">
             <motion.button
-              whileHover={{ scale: 1.02, y: -1 }}
+              whileHover={{ scale: 1.02, y: -1, boxShadow: '0 8px 28px -4px rgba(99,102,241,0.45)' }}
               whileTap={{ scale: 0.98 }}
               className="gradient-btn-primary px-5 py-3 rounded-xl text-sm font-semibold text-white flex items-center gap-2"
             >
@@ -138,13 +171,17 @@ export default function Dashboard() {
                 key={s.label}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                whileHover={{ y: -2, boxShadow: '0 12px 32px -8px rgba(0,0,0,0.4)' }}
                 transition={{ delay: i * 0.07 }}
                 className={`stat-card p-5 bg-gradient-to-br ${s.grad} border ${s.border}`}
+                style={{ transition: 'box-shadow 0.2s, transform 0.2s' }}
               >
                 <div className="flex items-center justify-between mb-4">
                   <s.icon className={`w-5 h-5 ${s.text}`} />
                 </div>
-                <div className="text-2xl font-bold text-white mb-0.5">{s.value}</div>
+                <div className="text-2xl font-bold text-white mb-0.5">
+                  {typeof s.numericValue === 'number' ? <AnimatedNumber value={s.numericValue} /> : s.value}
+                </div>
                 <div className="text-xs text-slate-500">{s.label}</div>
                 <div className="text-xs text-slate-600 mt-0.5">{s.sub}</div>
               </motion.div>
