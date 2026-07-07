@@ -5,6 +5,7 @@ import { supabase } from '../lib/supabase'
 export interface Profile {
   id: string
   email: string
+  full_name: string | null
   subscription_tier: 'free' | 'pro' | 'business'
   credits: number
   stripe_customer_id: string | null
