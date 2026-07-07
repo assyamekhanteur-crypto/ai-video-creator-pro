@@ -1,200 +1,164 @@
+<div align="center">
+
 # 🎬 AI Creator Pro
 
-> Enterprise AI Video Generation SaaS
+### Enterprise AI Video Generation SaaS
 
-AI Creator Pro is a modern SaaS platform that transforms a simple text prompt into a complete AI-generated video.
+Turn a single prompt into professional AI-generated videos in minutes.
 
-The platform combines multiple AI services into one seamless production pipeline:
-
-✔ AI Script Generation
-
-✔ AI Voice Generation
-
-✔ AI Video Generation
-
-✔ Automatic Subtitles
-
-✔ Project Management
-
-✔ Credit System
-
-✔ Stripe Billing
+Generate scripts, voices, videos, subtitles and exports from one modern platform.
 
 ---
 
-## Demo
+![React](https://img.shields.io/badge/React-18-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
+![Vite](https://img.shields.io/badge/Vite-5-purple)
+![Supabase](https://img.shields.io/badge/Supabase-Backend-green)
+![Stripe](https://img.shields.io/badge/Stripe-Billing-indigo)
+![License](https://img.shields.io/badge/License-Commercial-red)
 
-https://sasa-lyart-eta.vercel.app/
-
----
-
-## Screenshots
-
-Dashboard
-
-AI Pipeline
-
-Video Studio
-
-Landing Page
-
-Authentication
+</div>
 
 ---
 
-# Features
+# 🚀 Overview
 
-## Authentication
+AI Creator Pro is a modern SaaS platform designed to automate the complete AI video production workflow.
 
-- Secure Login
-- Registration
-- Password Reset
-- Protected Routes
+From a simple prompt, users can generate a script, AI voice-over, video scenes, subtitles and export-ready content through a single intuitive interface.
 
----
-
-## Dashboard
-
-- User Analytics
-- Credit Balance
-- Recent Projects
-- AI Usage
-- Video History
+Built with a scalable architecture, the project is ready to be extended with multiple AI providers and custom workflows.
 
 ---
 
-## AI Pipeline
+# ✨ Core Features
 
-Prompt
-
-↓
-
-Script Generation
-
-↓
-
-Voice Generation
-
-↓
-
-Video Rendering
-
-↓
-
-Subtitle Generation
-
-↓
-
-Export
+- 🎬 Prompt → Video workflow
+- ✍️ AI Script Generation
+- 🎤 AI Voice Generation
+- 🎥 AI Video Rendering
+- 💬 Automatic Subtitles
+- 📁 Project Management
+- 📊 Analytics Dashboard
+- 👤 Authentication
+- 💳 Stripe Billing
+- 🌙 Premium Dark UI
+- 📱 Fully Responsive
+- ⚡ Fast Performance
 
 ---
 
-## Billing
+# 📸 Screenshots
 
-Stripe Integration
+> Replace these images with your own screenshots.
 
-Credits
+| Landing | Dashboard |
+|----------|-----------|
+| screenshots/landing.png | screenshots/dashboard.png |
 
-Subscriptions
-
-Usage Tracking
-
----
-
-## Technology
-
-React 18
-
-TypeScript
-
-Vite
-
-TailwindCSS
-
-Framer Motion
-
-Supabase
-
-React Query
-
-Zustand
-
-Stripe
+| Studio | Pricing |
+|---------|----------|
+| screenshots/studio.png | screenshots/pricing.png |
 
 ---
 
-## Project Structure
+# 🎯 Target Audience
 
+- Content Creators
+- Marketing Agencies
+- AI Startups
+- YouTubers
+- TikTok Creators
+- SaaS Businesses
+- Freelancers
+- Video Production Teams
+
+---
+
+# 🛠 Technology Stack
+
+## Frontend
+
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- Framer Motion
+- Zustand
+- React Query
+
+## Backend
+
+- Supabase
+- PostgreSQL
+- Authentication
+
+## Payments
+
+- Stripe
+
+## AI Providers
+
+Supports integration with:
+
+- OpenAI
+- ElevenLabs
+- Runway
+- Kling
+- Google Veo
+- Custom APIs
+
+---
+
+# 📂 Project Structure
+
+```text
 src/
-
 components/
-
 pages/
-
-hooks/
-
 contexts/
-
+hooks/
 services/
-
-utils/
-
+lib/
 types/
+utils/
+assets/
+```
 
 ---
 
-## Installation
+# ⚡ Quick Start
+
+```bash
+git clone https://github.com/YOUR_USERNAME/ai-creator-pro.git
 
 npm install
 
 npm run dev
+```
+
+Application available at:
+
+```
+http://localhost:5173
+```
 
 ---
 
-## Production
+# ⭐ Highlights
 
-npm run build
+✔ Enterprise UI
 
----
+✔ Modular Architecture
 
-## Why AI Creator Pro?
+✔ AI Pipeline
 
-Modern architecture
+✔ Stripe Ready
 
-Production-ready code
+✔ Supabase Ready
 
-Premium UI
+✔ Responsive
 
-Modular structure
+✔ Dark Theme
 
-Fast performance
-
-Easy customization
-
-Commercial use
-
----
-
-## Included
-
-Full source code
-
-Frontend
-
-Backend integration
-
-Database schema
-
-Authentication
-
-Billing
-
-Responsive UI
-
-Documentation
-
----
-
-## License
-
-Commercial License
+✔ Easy to Customize
