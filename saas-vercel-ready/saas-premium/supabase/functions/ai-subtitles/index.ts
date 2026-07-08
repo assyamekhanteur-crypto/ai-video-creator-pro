@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
+import { resolveApiKey } from "../_shared/apiKeys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,9 +39,7 @@ async function deductCredits(supabase: ReturnType<typeof createClient>, userId: 
   await supabase.from("credit_ledger").insert({ user_id: userId, delta: -cost, reason: "usage", ref_id: jobId });
 }
 
-async function transcribe(audioUrl: string, language?: string): Promise<TranscriptionResult> {
-  const apiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!apiKey) throw new Error("OPENAI_API_KEY secret is not configured. Add it in your Supabase project secrets.");
+async function transcribe(apiKey: string, audioUrl: string, language?: string): Promise<TranscriptionResult> {
 
   const audioRes = await fetch(audioUrl);
   if (!audioRes.ok) throw new Error(`Could not fetch audio from ${audioUrl} (${audioRes.status})`);
@@ -105,8 +104,12 @@ Deno.serve(async (req: Request) => {
     const jobId = (job as { id: string }).id;
 
     try {
-      await deductCredits(serviceClient, userId, SUBTITLES_CREDITS, jobId);
-      const { segments, language } = await transcribe(body.sourceUrl, body.language);
+      const { apiKey, isUserKey } = await resolveApiKey(serviceClient, userId, "openai", "OPENAI_API_KEY");
+      const { segments, language } = await transcribe(apiKey, body.sourceUrl, body.language);
+
+      if (!isUserKey) {
+        await deductCredits(serviceClient, userId, SUBTITLES_CREDITS, jobId);
+      }
 
       await serviceClient.from("ai_jobs").update({
         status: "completed",
@@ -114,7 +117,7 @@ Deno.serve(async (req: Request) => {
         completed_at: new Date().toISOString(),
       }).eq("id", jobId);
 
-      return new Response(JSON.stringify({ jobId, segments, language, creditsCost: SUBTITLES_CREDITS }), {
+      return new Response(JSON.stringify({ jobId, segments, language, creditsCost: isUserKey ? 0 : SUBTITLES_CREDITS }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (e) {
