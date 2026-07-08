@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
+import { resolveApiKey } from "../_shared/apiKeys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,9 +52,7 @@ async function ensureBucket(supabase: ReturnType<typeof createClient>) {
 
 /* ─── Submit: start an async render, return the provider's job id ─── */
 
-async function callRunway(prompt: string, opts: VideoRequest): Promise<{ id: string }> {
-  const apiKey = Deno.env.get("RUNWAY_API_KEY");
-  if (!apiKey) throw new Error("RUNWAY_API_KEY secret is not configured. Add it in your Supabase project secrets.");
+async function callRunway(apiKey: string, prompt: string, opts: VideoRequest): Promise<{ id: string }> {
   const res = await fetch("https://api.runwayml.com/v1/image_to_video", {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "X-Runway-Version": "2024-11-06" },
@@ -73,14 +72,10 @@ async function callRunway(prompt: string, opts: VideoRequest): Promise<{ id: str
   return { id: json.id };
 }
 
-async function callKling(prompt: string, opts: VideoRequest): Promise<{ id: string }> {
-  const apiKey = Deno.env.get("KLING_API_KEY");
-  if (!apiKey) throw new Error("KLING_API_KEY secret is not configured. Add it in your Supabase project secrets.");
-  const jwtPath = Deno.env.get("KLING_JWT");
-  if (!jwtPath) throw new Error("KLING_JWT secret is not configured.");
+async function callKling(apiKey: string, prompt: string, opts: VideoRequest): Promise<{ id: string }> {
   const res = await fetch("https://api.klingai.com/v1/videos/text2video", {
     method: "POST",
-    headers: { Authorization: `Bearer ${jwtPath}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "kling-v1",
       prompt,
@@ -96,9 +91,7 @@ async function callKling(prompt: string, opts: VideoRequest): Promise<{ id: stri
   return { id: json.data?.video_id ?? json.id };
 }
 
-async function callGoogle(prompt: string, opts: VideoRequest): Promise<{ id: string }> {
-  const apiKey = Deno.env.get("GOOGLE_AI_API_KEY");
-  if (!apiKey) throw new Error("GOOGLE_AI_API_KEY secret is not configured. Add it in your Supabase project secrets.");
+async function callGoogle(apiKey: string, prompt: string, opts: VideoRequest): Promise<{ id: string }> {
   // veo-2.0-generate-001 was shut down by Google on 2026-06-30 — do not revert to it.
   const model = Deno.env.get("GOOGLE_VIDEO_MODEL") ?? "veo-3.1-fast-generate-preview";
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:predictLongRunning?key=${apiKey}`, {
@@ -119,9 +112,7 @@ async function callGoogle(prompt: string, opts: VideoRequest): Promise<{ id: str
 
 /* ─── Poll: ask the provider whether the render is actually done ─── */
 
-async function checkRunway(providerJobId: string): Promise<ProviderStatus> {
-  const apiKey = Deno.env.get("RUNWAY_API_KEY");
-  if (!apiKey) return { status: "failed", error: "RUNWAY_API_KEY not configured" };
+async function checkRunway(apiKey: string, providerJobId: string): Promise<ProviderStatus> {
   const res = await fetch(`https://api.runwayml.com/v1/tasks/${providerJobId}`, {
     headers: { Authorization: `Bearer ${apiKey}`, "X-Runway-Version": "2024-11-06" },
   });
@@ -132,11 +123,9 @@ async function checkRunway(providerJobId: string): Promise<ProviderStatus> {
   return { status: "processing" };
 }
 
-async function checkKling(providerJobId: string): Promise<ProviderStatus> {
-  const jwtPath = Deno.env.get("KLING_JWT");
-  if (!jwtPath) return { status: "failed", error: "KLING_JWT not configured" };
+async function checkKling(apiKey: string, providerJobId: string): Promise<ProviderStatus> {
   const res = await fetch(`https://api.klingai.com/v1/videos/text2video/${providerJobId}`, {
-    headers: { Authorization: `Bearer ${jwtPath}` },
+    headers: { Authorization: `Bearer ${apiKey}` },
   });
   if (!res.ok) return { status: "failed", error: `Kling status check failed (${res.status})` };
   const json = await res.json();
@@ -146,9 +135,7 @@ async function checkKling(providerJobId: string): Promise<ProviderStatus> {
   return { status: "processing" };
 }
 
-async function checkGoogle(providerJobId: string): Promise<ProviderStatus> {
-  const apiKey = Deno.env.get("GOOGLE_AI_API_KEY");
-  if (!apiKey) return { status: "failed", error: "GOOGLE_AI_API_KEY not configured" };
+async function checkGoogle(apiKey: string, providerJobId: string): Promise<ProviderStatus> {
   const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/${providerJobId}?key=${apiKey}`);
   if (!res.ok) return { status: "failed", error: `Google Veo status check failed (${res.status})` };
   const json = await res.json();
@@ -161,10 +148,10 @@ async function checkGoogle(providerJobId: string): Promise<ProviderStatus> {
   return { status: "processing" };
 }
 
-async function checkProviderStatus(provider: string, providerJobId: string): Promise<ProviderStatus> {
+async function checkProviderStatus(apiKey: string, provider: string, providerJobId: string): Promise<ProviderStatus> {
   switch (provider) {
-    case "kling": return checkKling(providerJobId);
-    case "google": return checkGoogle(providerJobId);
+    case "kling": return checkKling(apiKey, providerJobId);
+    case "google": return checkGoogle(apiKey, providerJobId);
     case "runway":
     default: return checkRunway(providerJobId);
   }
@@ -209,7 +196,9 @@ Deno.serve(async (req: Request) => {
         return new Response(JSON.stringify({ status: row.status, resultUrl: row.result_url, error: row.error_message }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
 
-      const check = await checkProviderStatus(row.provider, row.provider_job_id);
+      const platformEnvVar = row.provider === "kling" ? "KLING_JWT" : row.provider === "google" ? "GOOGLE_AI_API_KEY" : "RUNWAY_API_KEY";
+      const { apiKey } = await resolveApiKey(serviceClient, userId, row.provider, platformEnvVar);
+      const check = await checkProviderStatus(apiKey, row.provider, row.provider_job_id);
 
       if (check.status === "completed") {
         await serviceClient.from("ai_jobs").update({
@@ -249,14 +238,19 @@ Deno.serve(async (req: Request) => {
     const jobId = (job as { id: string }).id;
 
     try {
-      await deductCredits(serviceClient, userId, creditsCost, jobId);
+      const platformEnvVar = provider === "kling" ? "KLING_JWT" : provider === "google" ? "GOOGLE_AI_API_KEY" : "RUNWAY_API_KEY";
+      const { apiKey, isUserKey } = await resolveApiKey(serviceClient, userId, provider, platformEnvVar);
+
+      if (!isUserKey) {
+        await deductCredits(serviceClient, userId, creditsCost, jobId);
+      }
 
       let providerJobId: string;
       switch (provider) {
-        case "kling": providerJobId = (await callKling(body.prompt, body)).id; break;
-        case "google": providerJobId = (await callGoogle(body.prompt, body)).id; break;
+        case "kling": providerJobId = (await callKling(apiKey, body.prompt, body)).id; break;
+        case "google": providerJobId = (await callGoogle(apiKey, body.prompt, body)).id; break;
         case "runway":
-        default: providerJobId = (await callRunway(body.prompt, body)).id; break;
+        default: providerJobId = (await callRunway(apiKey, body.prompt, body)).id; break;
       }
 
       // Stays 'processing' — only the GET poll above (backed by the real
@@ -269,7 +263,7 @@ Deno.serve(async (req: Request) => {
         provider,
         providerJobId,
         jobId,
-        creditsCost,
+        creditsCost: isUserKey ? 0 : creditsCost,
         status: "processing",
         message: "Video generation started. Poll status via GET /ai-video?jobId=...",
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
