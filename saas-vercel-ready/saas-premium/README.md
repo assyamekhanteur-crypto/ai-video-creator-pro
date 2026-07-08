@@ -144,4 +144,4 @@ supabase/
 
 ## License
 
-Not yet specified — see `LICENSE` (add one before distributing or selling).
+MIT — see [LICENSE](./LICENSE).
