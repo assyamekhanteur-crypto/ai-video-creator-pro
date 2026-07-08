@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
+import { resolveApiKey } from "../_shared/apiKeys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -57,10 +58,7 @@ async function deductCredits(supabase: ReturnType<typeof createClient>, userId: 
   });
 }
 
-async function callOpenAI(prompt: string, style: string, tone: string, targetSec: number): Promise<{ title: string; hook: string; scenes: ScriptScene[] }> {
-  const apiKey = Deno.env.get("OPENAI_API_KEY");
-  if (!apiKey) throw new Error("OPENAI_API_KEY secret is not configured. Add it in your Supabase project secrets.");
-
+async function callOpenAI(apiKey: string, prompt: string, style: string, tone: string, targetSec: number): Promise<{ title: string; hook: string; scenes: ScriptScene[] }> {
   const sys = `You are a professional video scriptwriter. Output STRICT JSON only, no prose.
 Return: { "title": string, "hook": string (1 sentence, must grab attention), "scenes": [{ "id": number, "heading": string, "narration": string (voiceover text), "visuals": string (description of what to show), "durationSec": number }] }
 Constraints:
@@ -134,10 +132,13 @@ Deno.serve(async (req: Request) => {
       const style = body.style ?? "tutorial";
       const tone = body.tone ?? "professional";
       const targetSec = body.durationSec ?? 45;
-      const result = await callOpenAI(body.prompt, style, tone, targetSec);
+      const { apiKey, isUserKey } = await resolveApiKey(serviceClient, userId, "openai", "OPENAI_API_KEY");
+      const result = await callOpenAI(apiKey, body.prompt, style, tone, targetSec);
       const total = (result.scenes as ScriptScene[]).reduce((s, sc) => s + sc.durationSec, 0);
 
-      await deductCredits(serviceClient, userId, SCENE_CREDITS, jobId);
+      if (!isUserKey) {
+        await deductCredits(serviceClient, userId, SCENE_CREDITS, jobId);
+      }
 
       const { result_text } = { result_text: JSON.stringify(result) };
       await serviceClient.from("ai_jobs").update({
@@ -151,7 +152,7 @@ Deno.serve(async (req: Request) => {
         hook: result.hook,
         scenes: result.scenes,
         totalDurationSec: total,
-        creditsCost: SCENE_CREDITS,
+        creditsCost: isUserKey ? 0 : SCENE_CREDITS,
         jobId,
       };
       return new Response(JSON.stringify(payload), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
