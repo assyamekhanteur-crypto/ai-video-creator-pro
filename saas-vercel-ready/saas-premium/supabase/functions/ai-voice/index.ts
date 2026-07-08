@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
+import { resolveApiKey } from "../_shared/apiKeys.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -67,8 +68,7 @@ Deno.serve(async (req: Request) => {
     const jobId = (job as { id: string }).id;
 
     try {
-      const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
-      if (!apiKey) throw new Error("ELEVENLABS_API_KEY secret is not configured. Add it in your Supabase project secrets.");
+      const { apiKey, isUserKey } = await resolveApiKey(serviceClient, userId, "elevenlabs", "ELEVENLABS_API_KEY");
 
       const voiceId = body.voiceId ?? "21m00Tcm4TlvDq8ikWAM";
       const res = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -97,7 +97,9 @@ Deno.serve(async (req: Request) => {
       const { data: pub } = serviceClient.storage.from("ai-assets").getPublicUrl(filename);
       const audioUrl = pub.publicUrl;
 
-      await deductCredits(serviceClient, userId, VOICE_CREDITS, jobId);
+      if (!isUserKey) {
+        await deductCredits(serviceClient, userId, VOICE_CREDITS, jobId);
+      }
 
       await serviceClient.from("ai_jobs").update({
         status: "completed",
@@ -107,7 +109,7 @@ Deno.serve(async (req: Request) => {
 
       return new Response(JSON.stringify({
         audioUrl,
-        creditsCost: VOICE_CREDITS,
+        creditsCost: isUserKey ? 0 : VOICE_CREDITS,
         jobId,
       }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     } catch (e) {
