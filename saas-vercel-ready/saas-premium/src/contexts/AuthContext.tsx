@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { Sentry } from '../lib/sentry'
 
 export interface Profile {
   id: string
@@ -102,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!mounted) return
       setSession(data.session)
       if (data.session?.user) {
+        Sentry.setUser({ id: data.session.user.id, email: data.session.user.email })
         ensureProfile(data.session.user.id, data.session.user.email ?? '').finally(() => {
           setLoading(false)
         })
@@ -114,8 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       ;(async () => {
         setSession(newSession)
         if (newSession?.user) {
+          Sentry.setUser({ id: newSession.user.id, email: newSession.user.email })
           await ensureProfile(newSession.user.id, newSession.user.email ?? '')
         } else {
+          Sentry.setUser(null)
           setProfile(null)
         }
         setLoading(false)
