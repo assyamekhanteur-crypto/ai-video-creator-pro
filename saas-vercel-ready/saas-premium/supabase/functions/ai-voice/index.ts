@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
 import { resolveApiKey } from "../_shared/apiKeys.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,10 +50,13 @@ Deno.serve(async (req: Request) => {
     if (uErr || !userData.user) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const userId = userData.user.id;
 
+    const serviceClient = createClient(supabaseUrl, serviceRole);
+    const rateLimit = await checkRateLimit(serviceClient, userId, "ai-voice", 10, 300);
+    if (!rateLimit.allowed) return rateLimitResponse(corsHeaders, rateLimit.retryAfterSeconds!);
+
     const body = (await req.json()) as { text: string; voiceId?: string; projectId?: string };
     if (!body.text || !body.text.trim()) throw new Error("text is required");
 
-    const serviceClient = createClient(supabaseUrl, serviceRole);
     await ensureBucket(serviceClient);
 
     const { data: job, error: jobErr } = await serviceClient.from("ai_jobs").insert({
