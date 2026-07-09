@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
 import { resolveApiKey } from "../_shared/apiKeys.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -218,6 +219,9 @@ Deno.serve(async (req: Request) => {
     }
 
     /* ── POST: submit a new video generation job ── */
+    const rateLimit = await checkRateLimit(serviceClient, userId, "ai-video", 5, 600);
+    if (!rateLimit.allowed) return rateLimitResponse(corsHeaders, rateLimit.retryAfterSeconds!);
+
     const body = (await req.json()) as VideoRequest;
     if (!body.prompt || !body.prompt.trim()) throw new Error("prompt is required");
     const provider = body.provider ?? "runway";
