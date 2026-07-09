@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
 import { encryptSecret, maskKey } from "../_shared/crypto.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,6 +31,8 @@ Deno.serve(async (req: Request) => {
     const userId = userData.user.id;
 
     const serviceClient = createClient(supabaseUrl, serviceRole);
+    const rateLimit = await checkRateLimit(serviceClient, userId, "manage-api-keys", 20, 300);
+    if (!rateLimit.allowed) return rateLimitResponse(corsHeaders, rateLimit.retryAfterSeconds!);
 
     if (req.method === "GET") {
       const { data, error } = await serviceClient
