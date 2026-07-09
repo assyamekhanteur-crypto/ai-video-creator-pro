@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,6 +66,9 @@ Deno.serve(async (req: Request) => {
 
       return new Response(JSON.stringify(job), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    const rateLimit = await checkRateLimit(serviceClient, userId, "submit-render", 15, 300);
+    if (!rateLimit.allowed) return rateLimitResponse(corsHeaders, rateLimit.retryAfterSeconds!);
 
     const body = (await req.json()) as SubmitRequest;
     if (!body.jobType || !CREDITS[body.jobType]) throw new Error(`Invalid jobType: ${body.jobType}`);
