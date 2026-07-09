@@ -15,6 +15,7 @@ export default defineConfig({
           'vendor-motion': ['framer-motion'],
           'vendor-supabase': ['@supabase/supabase-js', '@tanstack/react-query'],
           'vendor-editor': ['@dnd-kit/core', '@dnd-kit/sortable', 'wavesurfer.js'],
+          'vendor-sentry': ['@sentry/react'],
         },
       },
     },
