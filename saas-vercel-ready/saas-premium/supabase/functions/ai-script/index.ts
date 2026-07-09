@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
 import { resolveApiKey } from "../_shared/apiKeys.ts";
+import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -112,10 +113,12 @@ Deno.serve(async (req: Request) => {
     const userId = userData.user.id;
     const email = userData.user.email ?? "";
 
+    const serviceClient = createClient(supabaseUrl, serviceRole);
+    const rateLimit = await checkRateLimit(serviceClient, userId, "ai-script", 10, 300);
+    if (!rateLimit.allowed) return rateLimitResponse(corsHeaders, rateLimit.retryAfterSeconds!);
+
     const body = (await req.json()) as ScriptRequest;
     if (!body.prompt || !body.prompt.trim()) throw new Error("prompt is required");
-
-    const serviceClient = createClient(supabaseUrl, serviceRole);
 
     const { data: job, error: jobErr } = await serviceClient.from("ai_jobs").insert({
       user_id: userId,
