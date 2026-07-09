@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 import { AuthProvider } from './contexts/AuthContext'
 import HomeGate from './components/HomeGate'
 
@@ -106,6 +107,7 @@ function App() {
           error:   { iconTheme: { primary: '#ef4444', secondary: '#f8fafc' } },
         }}
       />
+      <VercelAnalytics />
     </AuthProvider>
   )
 }
