@@ -73,7 +73,35 @@ Deno.serve(async (req: Request) => {
         const invoice = event.data.object as Stripe.Invoice;
         const userId = (invoice as unknown as { metadata?: { user_id?: string } }).metadata?.user_id ?? invoice.parent?.subscription_details?.metadata?.user_id;
         const planId = invoice.parent?.subscription_details?.metadata?.plan_id ?? "";
-        if (userId) await grantCredits(supabase, userId, planId, "subscription");
+        if (userId) {
+          await grantCredits(supabase, userId, planId, "subscription");
+          await supabase.from("profiles").update({ payment_issue: false }).eq("id", userId);
+        }
+        break;
+      }
+      case "invoice.payment_failed": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const userId = (invoice as unknown as { metadata?: { user_id?: string } }).metadata?.user_id ?? invoice.parent?.subscription_details?.metadata?.user_id;
+        if (userId) {
+          const { data: profile } = await supabase.from("profiles").select("email").eq("id", userId).maybeSingle();
+          await supabase.from("profiles").update({ payment_issue: true }).eq("id", userId);
+          if (profile) {
+            const email = (profile as { email: string }).email;
+            await supabase.from("email_notifications").insert({
+              user_id: userId,
+              to_email: email,
+              template: "payment_failed",
+              subject: "Action needed: your AI Creator Pro payment failed",
+              body: `We couldn't process your latest payment. Your subscription and credits are unaffected for now, but please update your payment method to avoid losing access.\n\nUpdate your payment method: ${Deno.env.get("APP_URL") ?? "https://aicreatorpro.com"}/billing\n\nThe AI Creator Pro team`,
+              status: "queued",
+            });
+            // Fire-and-forget: try to send it right away rather than waiting on whatever process drains the queue.
+            const sendEmailUrl = `${supabaseUrl}/functions/v1/send-email`;
+            EdgeRuntime.waitUntil(
+              fetch(sendEmailUrl, { method: "POST", headers: { Authorization: `Bearer ${serviceRole}`, "Content-Type": "application/json" } }).catch(() => {})
+            );
+          }
+        }
         break;
       }
       case "customer.subscription.deleted": {
@@ -92,4 +120,3 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Webhook handler failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
-
