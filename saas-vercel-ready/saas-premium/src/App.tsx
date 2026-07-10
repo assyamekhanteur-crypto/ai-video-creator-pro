@@ -1,7 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { Analytics as VercelAnalytics } from '@vercel/analytics/react'
 import { AuthProvider } from './contexts/AuthContext'
 import HomeGate from './components/HomeGate'
 
@@ -19,6 +18,7 @@ const AIPipeline     = lazy(() => import('./pages/AIPipeline'))
 const Autopilot      = lazy(() => import('./pages/Autopilot'))
 const Billing        = lazy(() => import('./pages/Billing'))
 const Settings       = lazy(() => import('./pages/Settings'))
+const AffiliateReview = lazy(() => import('./pages/AffiliateReview'))
 const RenderHistory  = lazy(() => import('./pages/RenderHistory'))
 const Analytics      = lazy(() => import('./pages/Analytics'))
 const Admin          = lazy(() => import('./pages/Admin'))
@@ -74,6 +74,7 @@ function App() {
             <Route path="autopilot"          element={<Autopilot />} />
             <Route path="billing"            element={<Billing />} />
             <Route path="settings"           element={<Settings />} />
+            <Route path="affiliate-review"   element={<AffiliateReview />} />
             <Route path="render-history"     element={<RenderHistory />} />
             <Route path="analytics"          element={<Analytics />} />
             <Route path="referrals"          element={<Referrals />} />
@@ -107,7 +108,6 @@ function App() {
           error:   { iconTheme: { primary: '#ef4444', secondary: '#f8fafc' } },
         }}
       />
-      <VercelAnalytics />
     </AuthProvider>
   )
 }
