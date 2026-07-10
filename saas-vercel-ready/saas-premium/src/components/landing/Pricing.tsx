@@ -26,7 +26,7 @@ const PLANS = [
       'Priority render queue',
       'Autopilot scheduling',
     ],
-    cta: 'Start 7-day trial',
+    cta: 'Subscribe now',
     highlight: true,
   },
   {
@@ -42,7 +42,7 @@ const PLANS = [
       'API access',
       'Dedicated support',
     ],
-    cta: 'Start 7-day trial',
+    cta: 'Subscribe now',
     highlight: false,
   },
 ]
