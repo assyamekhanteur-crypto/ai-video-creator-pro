@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import {
   Film, Sparkles, Clock, Plus, Play, Wand2,
   Zap, CheckCircle2, Rocket, ChevronRight,
-  Mic, Music, Image, Scissors,
+  Mic, Music, Image, Scissors, ShoppingBag,
 } from 'lucide-react'
 import { useAuth, CREDIT_LIMITS } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -17,6 +17,7 @@ const aiTools = [
   { to: '/ai-music',     icon: Music,    label: 'AI Music',      color: 'from-amber-500 to-orange-500',  glow: 'rgba(245,158,11,0.3)',  desc: 'Original soundtrack, any mood' },
   { to: '/ai-thumbnail', icon: Image,    label: 'AI Thumbnail',  color: 'from-emerald-500 to-teal-500',  glow: 'rgba(16,185,129,0.3)',  desc: 'YouTube-ready in 1 click' },
   { to: '/ai-shorts',    icon: Scissors, label: 'AI Shorts',     color: 'from-cyan-500 to-blue-500',     glow: 'rgba(6,182,212,0.3)',   desc: 'Long video → TikTok clips' },
+  { to: '/affiliate-review', icon: ShoppingBag, label: 'Affiliate Review', color: 'from-orange-500 to-amber-500', glow: 'rgba(245,158,11,0.3)', desc: 'Product pitch built for conversion' },
 ]
 
 function greeting() {
