@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Film, Sparkles, FolderOpen, CreditCard, Zap,
   Clock, BarChart3, ShieldCheck, Users, LogOut, ChevronLeft,
   Wand2, Mic, Music, Subtitles, Image, Scissors, Search,
-  Store, Rocket, Bell, Settings, Plus
+  Store, Rocket, Bell, Settings, Plus, ShoppingBag
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
@@ -15,6 +15,7 @@ const navGroups = [
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard', exact: true },
       { to: '/create', icon: Wand2, label: 'Create Video', badge: 'New' },
+      { to: '/affiliate-review', icon: ShoppingBag, label: 'Affiliate Review' },
       { to: '/ai-pipeline', icon: Sparkles, label: 'AI Pipeline' },
       { to: '/autopilot', icon: Rocket, label: 'Autopilot' },
     ]
