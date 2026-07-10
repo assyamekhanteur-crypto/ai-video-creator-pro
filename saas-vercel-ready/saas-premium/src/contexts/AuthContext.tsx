@@ -12,6 +12,7 @@ export interface Profile {
   stripe_customer_id: string | null
   is_admin: boolean
   is_suspended: boolean
+  payment_issue: boolean
   created_at: string
 }
 
