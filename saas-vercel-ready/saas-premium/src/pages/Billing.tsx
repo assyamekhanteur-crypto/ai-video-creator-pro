@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Zap, Crown, Building, Check, Sparkles, Loader2 } from 'lucide-react'
+import { Zap, Crown, Building, Check, Sparkles, Loader2, AlertTriangle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -25,8 +25,9 @@ const ICON_TEXT: Record<string, string> = {
 }
 
 export default function Billing() {
-  const { profile } = useAuth()
+  const { profile, session } = useAuth()
   const [isLoading, setIsLoading] = useState<string | null>(null)
+  const [openingPortal, setOpeningPortal] = useState(false)
 
   const currentPlan = profile?.subscription_tier ?? 'free'
   const credits = profile?.credits ?? 0
@@ -42,7 +43,8 @@ export default function Billing() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          Authorization: `Bearer ${session?.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ planId }),
       })
@@ -60,12 +62,52 @@ export default function Billing() {
     }
   }
 
+  const handleOpenPortal = async () => {
+    setOpeningPortal(true)
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/stripe-portal`
+    try {
+      const res = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Could not open billing portal')
+      window.location.href = data.url
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Could not open billing portal')
+      setOpeningPortal(false)
+    }
+  }
+
   return (
     <div className="h-full overflow-auto p-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-white tracking-tight">Billing & Plans</h1>
         <p className="text-slate-400 mt-1 text-sm">Choose the plan that fits your needs</p>
       </div>
+
+      {profile?.payment_issue && (
+        <div className="mb-8 rounded-xl border border-red-500/30 bg-red-500/10 p-4 flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-300">Your last payment failed</p>
+              <p className="text-sm text-red-400/80">Update your payment method to keep your subscription active.</p>
+            </div>
+          </div>
+          <button
+            onClick={handleOpenPortal}
+            disabled={openingPortal}
+            className="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-400 text-white text-sm font-semibold transition-colors disabled:opacity-50 flex items-center gap-2 shrink-0"
+          >
+            {openingPortal ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            Update payment method
+          </button>
+        </div>
+      )}
 
       <div className="glass-panel rounded-2xl p-6 mb-8">
         <div className="flex items-center justify-between flex-wrap gap-6">
