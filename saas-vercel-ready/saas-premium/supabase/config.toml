@@ -1,0 +1,11 @@
+[functions.ai-script]
+verify_jwt = false
+
+[functions.ai-voice]
+verify_jwt = false
+
+[functions.ai-video]
+verify_jwt = false
+
+[functions.ai-subtitles]
+verify_jwt = false
