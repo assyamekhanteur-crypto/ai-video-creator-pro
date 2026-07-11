@@ -1,18 +1,19 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { User, Lock, Trash2, Loader2, Save, AlertTriangle, LogOut, CreditCard, Key, Plus, Check } from 'lucide-react'
+import { User, Lock, Trash2, Loader2, Save, AlertTriangle, LogOut, CreditCard, Key, Plus, Check, Code, Copy } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 
-type Tab = 'profile' | 'security' | 'billing' | 'api-keys' | 'danger'
+type Tab = 'profile' | 'security' | 'billing' | 'api-keys' | 'developer' | 'danger'
 
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
   { id: 'profile', label: 'Profile', icon: User },
   { id: 'security', label: 'Security', icon: Lock },
   { id: 'billing', label: 'Subscription', icon: CreditCard },
   { id: 'api-keys', label: 'API Keys', icon: Key },
+  { id: 'developer', label: 'Developer API', icon: Code },
   { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
 ]
 
@@ -47,6 +48,63 @@ export default function Settings() {
   // Danger zone
   const [confirmDelete, setConfirmDelete] = useState('')
   const [deleting, setDeleting] = useState(false)
+
+  // Developer API tab
+  const [devKeys, setDevKeys] = useState<{ id: string; name: string; key_prefix: string; created_at: string; last_used_at: string | null }[]>([])
+  const [loadingDevKeys, setLoadingDevKeys] = useState(true)
+  const [newKeyName, setNewKeyName] = useState('')
+  const [creatingKey, setCreatingKey] = useState(false)
+  const [revealedKey, setRevealedKey] = useState<string | null>(null)
+  const [revokingId, setRevokingId] = useState<string | null>(null)
+
+  const devKeysUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-dev-keys`
+
+  useEffect(() => {
+    if (tab !== 'developer' || !session) return
+    setLoadingDevKeys(true)
+    fetch(devKeysUrl, { headers: authHeaders() })
+      .then(res => res.json())
+      .then(data => setDevKeys(data.keys ?? []))
+      .catch(() => toast.error('Could not load API keys'))
+      .finally(() => setLoadingDevKeys(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, session])
+
+  const handleCreateDevKey = async () => {
+    setCreatingKey(true)
+    try {
+      const res = await fetch(devKeysUrl, {
+        method: 'POST',
+        headers: { ...authHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newKeyName.trim() || 'API Key' }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to create key')
+      setRevealedKey(data.key)
+      setNewKeyName('')
+      const listRes = await fetch(devKeysUrl, { headers: authHeaders() })
+      const listData = await listRes.json()
+      setDevKeys(listData.keys ?? [])
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : 'Failed to create key')
+    } finally {
+      setCreatingKey(false)
+    }
+  }
+
+  const handleRevokeDevKey = async (id: string) => {
+    setRevokingId(id)
+    try {
+      const res = await fetch(`${devKeysUrl}?id=${id}`, { method: 'DELETE', headers: authHeaders() })
+      if (!res.ok) throw new Error('Failed to revoke key')
+      setDevKeys(prev => prev.filter(k => k.id !== id))
+      toast.success('Key revoked')
+    } catch {
+      toast.error('Failed to revoke key')
+    } finally {
+      setRevokingId(null)
+    }
+  }
 
   const apiKeysUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-api-keys`
   const authHeaders = () => ({
@@ -329,6 +387,78 @@ export default function Settings() {
                       </div>
                     )
                   })}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {tab === 'developer' && (
+            <motion.div key="developer" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="glass-card p-6">
+              <div className="flex items-start justify-between mb-1">
+                <h2 className="text-lg font-semibold text-white">Developer API keys</h2>
+                <a href="/docs/api" target="_blank" rel="noreferrer" className="text-xs text-cyan-400 hover:text-cyan-300">View API docs →</a>
+              </div>
+              <p className="text-sm text-slate-400 mb-6">
+                Call the same script/voice/video/subtitles endpoints programmatically. Requests are billed against your account's credits, same as using the app.
+              </p>
+
+              {revealedKey && (
+                <div className="mb-5 p-4 rounded-xl border border-amber-500/30 bg-amber-500/10">
+                  <p className="text-sm font-medium text-amber-300 mb-2">Copy this key now — it won't be shown again.</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs bg-slate-950/60 rounded-lg px-3 py-2 text-slate-200 overflow-x-auto whitespace-nowrap">{revealedKey}</code>
+                    <button
+                      onClick={() => { navigator.clipboard.writeText(revealedKey); toast.success('Copied') }}
+                      className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 shrink-0"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <button onClick={() => setRevealedKey(null)} className="text-xs text-slate-500 hover:text-slate-300 mt-2">Done, hide this</button>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 mb-6">
+                <input
+                  value={newKeyName}
+                  onChange={e => setNewKeyName(e.target.value)}
+                  placeholder="Key name — e.g. 'Zapier integration'"
+                  className="input-premium flex-1 py-2 text-sm"
+                />
+                <button
+                  onClick={handleCreateDevKey}
+                  disabled={creatingKey}
+                  className="gradient-btn-primary px-4 py-2 rounded-lg text-xs font-semibold text-white disabled:opacity-50 flex items-center gap-1.5 shrink-0"
+                >
+                  {creatingKey ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                  Create key
+                </button>
+              </div>
+
+              {loadingDevKeys ? (
+                <div className="flex items-center justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-slate-500" /></div>
+              ) : devKeys.length === 0 ? (
+                <p className="text-sm text-slate-600 text-center py-6">No API keys yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {devKeys.map(k => (
+                    <div key={k.id} className="flex items-center justify-between border border-slate-800 rounded-lg px-4 py-3">
+                      <div>
+                        <p className="text-sm text-white">{k.name}</p>
+                        <p className="text-xs text-slate-500 font-mono">{k.key_prefix}••••••••</p>
+                        <p className="text-xs text-slate-600 mt-0.5">
+                          {k.last_used_at ? `Last used ${new Date(k.last_used_at).toLocaleDateString()}` : 'Never used'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleRevokeDevKey(k.id)}
+                        disabled={revokingId === k.id}
+                        className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
             </motion.div>
