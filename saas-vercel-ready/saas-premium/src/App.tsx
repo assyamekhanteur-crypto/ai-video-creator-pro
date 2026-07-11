@@ -10,6 +10,7 @@ const ForgotPassword = lazy(() => import('./pages/ForgotPassword'))
 const ResetPassword  = lazy(() => import('./pages/ResetPassword'))
 const Terms          = lazy(() => import('./pages/Terms'))
 const Privacy        = lazy(() => import('./pages/Privacy'))
+const ApiDocs        = lazy(() => import('./pages/ApiDocs'))
 const Dashboard      = lazy(() => import('./pages/Dashboard'))
 const Create         = lazy(() => import('./pages/Create'))
 const Editor         = lazy(() => import('./pages/Editor'))
@@ -64,6 +65,7 @@ function App() {
           <Route path="/reset-password"  element={<ResetPassword />} />
           <Route path="/terms"           element={<Terms />} />
           <Route path="/privacy"         element={<Privacy />} />
+          <Route path="/docs/api"        element={<ApiDocs />} />
 
           <Route path="/" element={<HomeGate />}>
             <Route index                     element={<Dashboard />} />
