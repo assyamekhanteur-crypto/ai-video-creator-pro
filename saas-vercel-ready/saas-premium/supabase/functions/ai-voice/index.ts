@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.108.2";
 import { resolveApiKey } from "../_shared/apiKeys.ts";
 import { checkRateLimit, rateLimitResponse } from "../_shared/rateLimit.ts";
+import { resolveAuth } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,12 +46,11 @@ Deno.serve(async (req: Request) => {
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    const userClient = createClient(supabaseUrl, anonKey, { global: { headers: { Authorization: `Bearer ${token}` } } });
-    const { data: userData, error: uErr } = await userClient.auth.getUser();
-    if (uErr || !userData.user) return new Response(JSON.stringify({ error: "Invalid session" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    const userId = userData.user.id;
-
     const serviceClient = createClient(supabaseUrl, serviceRole);
+    const auth = await resolveAuth(token, supabaseUrl, anonKey, serviceClient);
+    if (!auth) return new Response(JSON.stringify({ error: "Invalid session or API key" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const userId = auth.userId;
+
     const rateLimit = await checkRateLimit(serviceClient, userId, "ai-voice", 10, 300);
     if (!rateLimit.allowed) return rateLimitResponse(corsHeaders, rateLimit.retryAfterSeconds!);
 
