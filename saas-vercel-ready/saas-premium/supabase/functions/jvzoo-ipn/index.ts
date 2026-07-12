@@ -7,7 +7,7 @@ const corsHeaders = { "Access-Control-Allow-Origin": "*" };
 // the number in the generated button URL) to what a successful sale grants.
 // Add one entry per product/plan you sell through JVZoo.
 const PRODUCT_MAP: Record<string, { tier: "pro" | "business"; credits: number }> = {
-  "REPLACE_WITH_YOUR_JVZOO_PRODUCT_ID": { tier: "pro", credits: 700 },
+  "446085": { tier: "pro", credits: 700 },
 };
 
 async function verifyIpn(fields: Record<string, string>, secretKey: string): Promise<boolean> {
