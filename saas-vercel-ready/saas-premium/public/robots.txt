@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /create
+Disallow: /projects
+Disallow: /editor
+Disallow: /settings
+Disallow: /billing
+Disallow: /admin
+Disallow: /analytics
+Disallow: /marketplace
+Disallow: /autopilot
+Disallow: /render-history
+Disallow: /referrals
+Disallow: /ai-*
+
+Sitemap: https://sasa-lyart-eta.vercel.app/sitemap.xml
