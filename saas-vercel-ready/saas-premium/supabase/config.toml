@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions.ai-subtitles]
 verify_jwt = false
+
+[functions.jvzoo-ipn]
+verify_jwt = false
