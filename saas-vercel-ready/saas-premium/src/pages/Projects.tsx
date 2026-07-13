@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Grid, List, Trash2, Film, Play } from 'lucide-react'
+import { Plus, Search, Grid, List, Trash2, Film, Play, Users } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
+import { getAssetHealth } from '../lib/assets'
 import { supabase } from '../lib/supabase'
 import type { Project } from '../types'
 
@@ -25,6 +26,7 @@ export default function Projects() {
   const [loading, setLoading] = useState(true)
   const [projects, setProjects] = useState<Project[]>([])
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [sharingId, setSharingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -61,6 +63,20 @@ export default function Projects() {
     }
     setProjects(prev => prev.filter(p => p.id !== id))
     toast.success('Project deleted')
+  }
+
+  async function handleToggleShare(project: Project) {
+    if (!user) return
+    setSharingId(project.id)
+    const nextValue = !project.shared_with_team
+    const { error } = await supabase.from('projects').update({ shared_with_team: nextValue }).eq('id', project.id).eq('user_id', user.id)
+    setSharingId(null)
+    if (error) {
+      toast.error('Could not update project sharing')
+      return
+    }
+    setProjects(prev => prev.map(p => p.id === project.id ? { ...p, shared_with_team: nextValue } : p))
+    toast.success(nextValue ? 'Project shared with your team' : 'Project unshared')
   }
 
   return (
@@ -172,14 +188,34 @@ export default function Projects() {
                       <p className="text-xs text-slate-600 mt-1.5">
                         {new Date(project.created_at).toLocaleDateString()}
                       </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/70 px-2 py-0.5 text-[11px] text-slate-400">
+                          <span className={`h-2 w-2 rounded-full ${getAssetHealth(project.thumbnail_url).tone === 'success' ? 'bg-emerald-400' : getAssetHealth(project.thumbnail_url).tone === 'warning' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                          {getAssetHealth(project.thumbnail_url).label}
+                        </div>
+                        {project.shared_with_team && (
+                          <div className="inline-flex items-center gap-1 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[11px] text-cyan-300">
+                            <Users className="w-3 h-3" /> Shared
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <button
-                      onClick={() => handleDelete(project.id, project.name)}
-                      disabled={deletingId === project.id}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors shrink-0 disabled:opacity-40"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => handleToggleShare(project)}
+                        disabled={sharingId === project.id}
+                        className={`p-1.5 rounded-lg transition-colors ${project.shared_with_team ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10'}`}
+                      >
+                        <Users className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(project.id, project.name)}
+                        disabled={deletingId === project.id}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-40"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
               )
@@ -210,8 +246,26 @@ export default function Projects() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-medium text-sm text-white truncate">{project.name}</h3>
                   <p className="text-xs text-slate-500 truncate">{project.description || new Date(project.created_at).toLocaleDateString()}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/70 px-2 py-0.5 text-[11px] text-slate-400">
+                    <span className={`h-2 w-2 rounded-full ${getAssetHealth(project.thumbnail_url).tone === 'success' ? 'bg-emerald-400' : getAssetHealth(project.thumbnail_url).tone === 'warning' ? 'bg-amber-400' : 'bg-cyan-400'}`} />
+                    {getAssetHealth(project.thumbnail_url).label}
+                  </div>
+                  {project.shared_with_team && (
+                    <div className="inline-flex items-center gap-1 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-2 py-0.5 text-[11px] text-cyan-300">
+                      <Users className="w-3 h-3" /> Shared
+                    </div>
+                  )}
+                </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleToggleShare(project)}
+                    disabled={sharingId === project.id}
+                    className={`p-2 rounded-lg transition-colors ${project.shared_with_team ? 'bg-cyan-500/10 text-cyan-400' : 'text-slate-500 hover:text-cyan-400 hover:bg-cyan-500/10'}`}
+                  >
+                    <Users className="w-4 h-4" />
+                  </button>
                   <Link to={`/editor/${project.id}`} className="px-4 py-2 bg-cyan-500/10 text-cyan-400 rounded-lg hover:bg-cyan-500/20 transition-colors text-sm font-medium">
                     Edit
                   </Link>

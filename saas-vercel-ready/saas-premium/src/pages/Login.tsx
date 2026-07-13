@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, type Variants } from 'framer-motion'
-import { Film, Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, Wand2, Mic, Video, Captions, ArrowUp } from 'lucide-react'
+import { Film, Mail, Lock, Loader2, AlertCircle, Eye, EyeOff, Wand2, Mic, Video, Captions, ArrowUp, Globe2, Sparkles } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import FilmStrip from '../components/landing/FilmStrip'
 
@@ -35,7 +35,7 @@ const fieldVariants: Variants = {
 }
 
 export default function Login() {
-  const { signIn } = useAuth()
+  const { signIn, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
   const emailRef = useRef<HTMLInputElement>(null)
   const [email, setEmail] = useState('')
@@ -45,6 +45,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [fieldError, setFieldError] = useState<'email' | null>(null)
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | null>(null)
 
   useEffect(() => {
     emailRef.current?.focus()
@@ -53,6 +54,16 @@ export default function Login() {
   const checkCapsLock = (e: KeyboardEvent<HTMLInputElement>) => {
     if (typeof e.getModifierState === 'function') {
       setCapsLockOn(e.getModifierState('CapsLock'))
+    }
+  }
+
+  const handleOAuth = async (provider: 'google' | 'github') => {
+    setError(null)
+    setOauthLoading(provider)
+    const { error: err } = await signInWithOAuth(provider)
+    setOauthLoading(null)
+    if (err) {
+      setError(err)
     }
   }
 
@@ -335,7 +346,25 @@ export default function Login() {
                 </motion.div>
               )}
 
-              <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible">
+              <motion.div custom={2} variants={fieldVariants} initial="hidden" animate="visible" className="space-y-2">
+                <button
+                  type="button"
+                  disabled={oauthLoading !== null}
+                  onClick={() => handleOAuth('google')}
+                  className="w-full py-3 border border-slate-700 rounded-lg font-semibold text-slate-200 hover:border-cyan-400/60 transition-all flex items-center justify-center gap-2"
+                >
+                  {oauthLoading === 'google' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe2 className="w-4 h-4" />}
+                  Continue with Google
+                </button>
+                <button
+                  type="button"
+                  disabled={oauthLoading !== null}
+                  onClick={() => handleOAuth('github')}
+                  className="w-full py-3 border border-slate-700 rounded-lg font-semibold text-slate-200 hover:border-cyan-400/60 transition-all flex items-center justify-center gap-2"
+                >
+                  {oauthLoading === 'github' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                  Continue with GitHub
+                </button>
                 <motion.button
                   type="submit"
                   disabled={loading}

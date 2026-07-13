@@ -5,6 +5,7 @@ export interface Project {
   description?: string
   thumbnail_url?: string
   status: 'draft' | 'processing' | 'completed'
+  shared_with_team?: boolean
   duration: number
   resolution: string
   fps: number

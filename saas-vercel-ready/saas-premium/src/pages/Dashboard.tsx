@@ -4,10 +4,11 @@ import { Link } from 'react-router-dom'
 import {
   Film, Sparkles, Clock, Plus, Play, Wand2,
   Zap, CheckCircle2, Rocket, ChevronRight,
-  Mic, Music, Image, Scissors, ShoppingBag,
+  Mic, Music, Image, Scissors, ShoppingBag, ArrowRight,
 } from 'lucide-react'
 import { useAuth, CREDIT_LIMITS } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { getNextOnboardingStep, onboardingSteps } from '../lib/onboarding'
 import type { Project } from '../types'
 
 const aiTools = [
@@ -62,6 +63,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [projects, setProjects] = useState<Project[]>([])
   const [stats, setStats] = useState<DashboardStats>({ videoCount: 0, minutesGenerated: 0, aiJobsCompleted: 0 })
+  const nextStep = getNextOnboardingStep(onboardingSteps)
 
   useEffect(() => {
     if (!user) return
@@ -188,6 +190,23 @@ export default function Dashboard() {
               </motion.div>
             ))}
         </div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-slate-900/80 to-indigo-500/10 p-5"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-cyan-300">Next step</p>
+              <h2 className="text-lg font-semibold text-white">{nextStep.title}</h2>
+              <p className="text-sm text-slate-400 mt-1">{nextStep.description}</p>
+            </div>
+            <Link to="/create" className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-2 text-sm font-medium text-cyan-300">
+              Start now <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </motion.div>
 
         {/* AI Tools grid */}
         <div>

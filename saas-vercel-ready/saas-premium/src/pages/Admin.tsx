@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Users, Loader2, ShieldCheck, Zap, TrendingUp, AlertTriangle, Search, Gift, Ban, CheckCircle, BarChart3, AlertCircle, Mail, XCircle } from 'lucide-react'
+import { Users, Loader2, ShieldCheck, Zap, TrendingUp, AlertTriangle, Search, Gift, Ban, CheckCircle, BarChart3, AlertCircle, Mail, XCircle, DatabaseZap } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -245,6 +245,14 @@ export default function Admin() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2"><DatabaseZap className="w-4 h-4 text-cyan-400" /> Storage health</h3>
+              <div className="rounded-lg border border-slate-800 bg-slate-950/70 p-4 text-sm text-slate-400 space-y-2">
+                <p>Assets are currently being surfaced with a storage-aware health status.</p>
+                <p className="text-slate-300">Provider-hosted URLs remain visible for compatibility, but a future migration will re-host them in Supabase Storage for better reliability.</p>
               </div>
             </div>
 

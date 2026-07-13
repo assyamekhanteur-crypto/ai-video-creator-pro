@@ -5,6 +5,7 @@ import { User, Lock, Trash2, Loader2, Save, AlertTriangle, LogOut, CreditCard, K
 import toast from 'react-hot-toast'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import { getAccountRole } from '../lib/roles'
 
 type Tab = 'profile' | 'security' | 'billing' | 'api-keys' | 'developer' | 'danger'
 
@@ -29,6 +30,7 @@ export default function Settings() {
   const { user, profile, signOut, refreshProfile, session } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('profile')
+  const role = getAccountRole(profile)
 
   // Profile tab
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
@@ -235,6 +237,10 @@ export default function Settings() {
           {tab === 'profile' && (
             <motion.div key="profile" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="glass-card p-6">
               <h2 className="text-lg font-semibold text-white mb-4">Profile</h2>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-950/70 px-3 py-1 text-sm text-slate-300">
+                <span className="h-2 w-2 rounded-full bg-cyan-400" />
+                Role: <span className="font-semibold uppercase text-white">{role}</span>
+              </div>
               <form onSubmit={handleSaveProfile} className="space-y-4 max-w-md">
                 <div>
                   <label className="block text-sm text-slate-400 mb-1.5">Email</label>

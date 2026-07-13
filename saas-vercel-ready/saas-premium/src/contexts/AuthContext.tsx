@@ -14,6 +14,7 @@ export interface Profile {
   is_suspended: boolean
   payment_issue: boolean
   created_at: string
+  role?: 'owner' | 'admin' | 'member'
 }
 
 interface AuthContextValue {
@@ -23,6 +24,7 @@ interface AuthContextValue {
   loading: boolean
   signUp: (email: string, password: string) => Promise<{ error: string | null; session: Session | null }>
   signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signInWithOAuth: (provider: 'google' | 'github') => Promise<{ error: string | null }>
   signOut: () => Promise<void>
   refreshProfile: () => Promise<void>
 }
@@ -66,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (createErr) {
       console.error('Profile create error:', createErr.message)
+      Sentry.captureException(createErr)
       return null
     }
     if (created) {
@@ -136,7 +139,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) return { error: error.message, session: null }
+    if (error) {
+      Sentry.captureException(error)
+      return { error: error.message, session: null }
+    }
     if (data.user) {
       await ensureProfile(data.user.id, email)
       // Trigger welcome email via email_notifications table
@@ -154,9 +160,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) return { error: error.message }
+    if (error) {
+      Sentry.captureException(error)
+      return { error: error.message }
+    }
     if (data.user) {
       await ensureProfile(data.user.id, email)
+    }
+    return { error: null }
+  }
+
+  const signInWithOAuth = async (provider: 'google' | 'github') => {
+    const redirectTo = typeof window !== 'undefined' ? `${window.location.origin}/` : undefined
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } })
+    if (error) {
+      Sentry.captureException(error)
+      return { error: error.message }
     }
     return { error: null }
   }
@@ -174,6 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signUp,
     signIn,
+    signInWithOAuth,
     signOut,
     refreshProfile,
   }

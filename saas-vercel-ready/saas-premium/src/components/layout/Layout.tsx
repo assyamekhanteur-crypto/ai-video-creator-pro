@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
+import { getAccountRole } from '../../lib/roles'
 
 const navGroups = [
   {
@@ -36,6 +37,7 @@ const navGroups = [
     label: 'Workspace',
     items: [
       { to: '/projects', icon: FolderOpen, label: 'Projects' },
+      { to: '/team', icon: Users, label: 'Team' },
       { to: '/render-history', icon: Clock, label: 'History' },
       { to: '/analytics', icon: BarChart3, label: 'Analytics' },
     ]
@@ -71,6 +73,7 @@ export default function Layout() {
 
   const tierColor = TIER_COLORS[profile?.subscription_tier ?? 'free']
   const creditsPercent = Math.min(100, ((profile?.credits ?? 0) / (profile?.subscription_tier === 'business' ? 10000 : profile?.subscription_tier === 'pro' ? 2000 : 100)) * 100)
+  const role = getAccountRole(profile)
 
   return (
     <div className="h-full flex bg-slate-950 relative" style={{ zIndex: 1 }}>
@@ -180,6 +183,9 @@ export default function Layout() {
                   <span className="text-xs font-semibold text-amber-400">{profile.credits.toLocaleString()}</span>
                   <span className="text-xs text-slate-500">credits</span>
                 </div>
+                <span className="rounded-full border border-slate-700 bg-slate-900/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300">
+                  {role}
+                </span>
                 <span className={`badge-pro bg-gradient-to-r ${tierColor} text-white border-0`}>
                   {profile.subscription_tier.toUpperCase()}
                 </span>
@@ -215,6 +221,7 @@ export default function Layout() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="text-xs font-medium text-white truncate">{user.email}</div>
+                <div className="text-[11px] uppercase tracking-wide text-slate-500">{role}</div>
               </div>
             </div>
           )}

@@ -16,6 +16,7 @@ const Dashboard      = lazy(() => import('./pages/Dashboard'))
 const Create         = lazy(() => import('./pages/Create'))
 const Editor         = lazy(() => import('./pages/Editor'))
 const Projects       = lazy(() => import('./pages/Projects'))
+const Team           = lazy(() => import('./pages/Team'))
 const AIPipeline     = lazy(() => import('./pages/AIPipeline'))
 const Autopilot      = lazy(() => import('./pages/Autopilot'))
 const Billing        = lazy(() => import('./pages/Billing'))
@@ -74,6 +75,7 @@ function App() {
             <Route path="create"             element={<Create />} />
             <Route path="editor/:projectId?" element={<Editor />} />
             <Route path="projects"           element={<Projects />} />
+            <Route path="team"               element={<Team />} />
             <Route path="ai-pipeline"        element={<AIPipeline />} />
             <Route path="autopilot"          element={<Autopilot />} />
             <Route path="billing"            element={<Billing />} />
