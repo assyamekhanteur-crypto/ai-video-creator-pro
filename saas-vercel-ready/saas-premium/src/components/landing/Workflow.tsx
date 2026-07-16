@@ -35,8 +35,8 @@ const STEPS = [
   {
     time: '00:48',
     icon: Download,
-    title: 'Export or publish',
-    desc: 'Download in your target resolution, or push straight to YouTube, TikTok or Instagram.',
+    title: 'Export and share',
+    desc: 'Download in your target resolution, ready to upload to YouTube, TikTok or Instagram yourself.',
   },
 ]
 
