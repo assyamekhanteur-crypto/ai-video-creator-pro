@@ -16,8 +16,8 @@ const QA = [
     a: 'You do. Exported videos are yours to publish, monetize or reuse without attribution, on every plan including Starter.',
   },
   {
-    q: 'Which platforms can I publish to?',
-    a: 'YouTube, TikTok, Instagram, Facebook, LinkedIn, X and Pinterest are supported for direct or scheduled publishing from Autopilot.',
+    q: 'Can Autopilot publish videos for me automatically?',
+    a: 'Not yet — Autopilot generates a week of scripted video ideas you can turn into real projects with one click. Publishing to YouTube, TikTok or Instagram is still a manual export-and-upload step today.',
   },
   {
     q: 'Can I cancel anytime?',
