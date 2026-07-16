@@ -41,8 +41,8 @@ const FEATURES = [
   },
   {
     icon: Rocket,
-    title: 'Autopilot channels',
-    desc: 'Queue a content calendar and let AI Creator Pro keep a channel publishing on schedule.',
+    title: 'Autopilot ideas',
+    desc: 'Queue a week of AI-written scripts and turn each one into a real project in one click.',
   },
 ]
 
