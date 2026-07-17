@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Film, ArrowLeft, Key, Zap, AlertCircle } from 'lucide-react'
+import { useSEO } from '../hooks/useSEO'
 
 const BASE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`
 
@@ -38,6 +39,7 @@ function Endpoint({ method, path, credits, description, example, response }: {
 }
 
 export default function ApiDocs() {
+  useSEO('API Documentation', 'Call the AI Creator Pro script, voice, video and subtitles endpoints programmatically with a developer API key.')
   return (
     <div className="min-h-screen bg-slate-950">
       <div className="max-w-3xl mx-auto px-6 py-12">
