@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Film, ArrowLeft } from 'lucide-react'
+import { useSEO } from '../hooks/useSEO'
 
 export default function Privacy() {
+  useSEO('Privacy Policy')
   const updated = 'June 2025'
 
   return (
