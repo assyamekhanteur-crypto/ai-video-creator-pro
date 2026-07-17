@@ -5,6 +5,7 @@ import {
   Store, Key, ShieldCheck,
 } from 'lucide-react'
 import FilmStrip from '../components/landing/FilmStrip'
+import { useSEO } from '../hooks/useSEO'
 
 const PIPELINE_STAGES = [
   { icon: Wand2, label: 'Prompt', time: '0:00' },
@@ -26,6 +27,7 @@ const FEATURES = [
 ]
 
 export default function JVZooOffer() {
+  useSEO('Get Full Access', 'Turn a prompt into a finished video — script, voice, video and captions in one pipeline. Get full access to AI Creator Pro today.')
   return (
     <div className="min-h-screen bg-slate-950">
       {/* Simple header — intentionally not the full app nav, this is a standalone offer page */}
