@@ -1,12 +1,14 @@
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Film, Mail, Lock, Loader2, AlertCircle, Check, Gift, Globe2, Sparkles } from 'lucide-react'
+import { Film, Mail, Lock, Loader2, AlertCircle, Check, Gift } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { applyReferral } from '../lib/render'
+import { useSEO } from '../hooks/useSEO'
 
 export default function Register() {
-  const { signUp, session, signInWithOAuth } = useAuth()
+  useSEO('Create your account', 'Start free with 100 credits. Generate your first AI video from a single prompt — no card required.')
+  const { signUp, session } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const refCode = searchParams.get('ref') ?? ''
@@ -16,19 +18,8 @@ export default function Register() {
   const [acceptTos, setAcceptTos] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [oauthLoading, setOauthLoading] = useState<'google' | 'github' | null>(null)
 
   const benefits = ['100 free AI credits', 'AI script + voice generation', 'HD video exports', 'No credit card required']
-
-  const handleOAuth = async (provider: 'google' | 'github') => {
-    setError(null)
-    setOauthLoading(provider)
-    const { error: err } = await signInWithOAuth(provider)
-    setOauthLoading(null)
-    if (err) {
-      setError(err)
-    }
-  }
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -182,24 +173,6 @@ export default function Register() {
               </div>
             )}
 
-            <button
-              type="button"
-              disabled={oauthLoading !== null}
-              onClick={() => handleOAuth('google')}
-              className="w-full py-3 border border-slate-700 rounded-lg font-semibold text-slate-200 hover:border-cyan-400/60 transition-all flex items-center justify-center gap-2"
-            >
-              {oauthLoading === 'google' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe2 className="w-4 h-4" />}
-              Continue with Google
-            </button>
-            <button
-              type="button"
-              disabled={oauthLoading !== null}
-              onClick={() => handleOAuth('github')}
-              className="w-full py-3 border border-slate-700 rounded-lg font-semibold text-slate-200 hover:border-cyan-400/60 transition-all flex items-center justify-center gap-2"
-            >
-              {oauthLoading === 'github' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Continue with GitHub
-            </button>
             <button
               type="submit"
               disabled={loading}
